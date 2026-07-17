@@ -4,9 +4,11 @@ import json
 import subprocess
 import sys
 from collections.abc import Generator
+from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException, status
-from fastapi.responses import StreamingResponse
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.azure_clients import hybrid_retrieve, stream_chat_completion
 from app.config import Settings, get_settings
@@ -23,7 +25,15 @@ from app.database import (
     init_chat_tables,
     list_documents,
 )
-from app.rag import REFUSAL, build_messages, citations_from_chunks, answer_chat, expand_retrieval_query, is_refusal_text, retrieval_is_relevant
+from app.rag import (
+    REFUSAL,
+    answer_chat,
+    build_messages,
+    expand_retrieval_query,
+    filter_citations_from_response,
+    is_refusal_text,
+    retrieval_is_relevant,
+)
 from app.schemas import (
     ChatRequest,
     ChatResponse,
@@ -42,6 +52,34 @@ from app.schemas import (
 settings = get_settings()
 init_chat_tables(settings.database_path)
 app = FastAPI(title="Meridian Health Partners RAG API", version="0.2.0")
+DIST_DIR = Path(__file__).resolve().parent.parent / "dist"
+ASSETS_DIR = DIST_DIR / "assets"
+
+if ASSETS_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "font-src 'self' data:; "
+        "connect-src 'self'; "
+        "media-src 'self' blob:; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "frame-ancestors 'none'"
+    )
+    if "server" in response.headers:
+        del response.headers["server"]
+    return response
 
 
 def require_api_key(x_api_key: str = Header(default="")) -> None:
@@ -135,19 +173,21 @@ def stream_chat_response(app_settings: Settings, request: ChatRequest) -> Genera
         yield sse("done", {"response": REFUSAL, "citations": [], "conversation_id": conversation_id})
         return
 
-    citations = citations_from_chunks(chunks)
     history_text = format_history_for_prompt(get_history(app_settings.database_path, conversation_id))
     messages = build_messages(request.message, history_text, chunks)
-    yield sse("metadata", {"conversation_id": conversation_id, "citations": [citation.model_dump() for citation in citations]})
+    yield sse("metadata", {"conversation_id": conversation_id, "citations": []})
 
     collected: list[str] = []
     for token in stream_chat_completion(app_settings, messages):
         collected.append(token)
-        yield sse("token", token)
 
     response_text = "".join(collected)
     if is_refusal_text(response_text):
         citations = []
+        response_text = response_text.split("<used_chunks>", 1)[0].strip()
+    else:
+        response_text, citations = filter_citations_from_response(response_text, chunks)
+    yield sse("token", response_text)
     add_message(app_settings.database_path, conversation_id, "user", request.message)
     add_message(app_settings.database_path, conversation_id, "assistant", response_text)
     yield sse(
@@ -191,3 +231,16 @@ def citation_detail(chunk_id: str) -> CitationDetailResponse:
         chunk_index=row["chunk_index"],
         text=row["text"],
     )
+
+
+@app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], include_in_schema=False)
+def unknown_api(path: str) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": "API route not found"})
+
+
+@app.get("/{path:path}", include_in_schema=False)
+def frontend(path: str) -> FileResponse:
+    index_path = DIST_DIR / "index.html"
+    if not index_path.exists():
+        raise HTTPException(status_code=404, detail="Frontend build not found")
+    return FileResponse(index_path)

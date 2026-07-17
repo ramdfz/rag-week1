@@ -9,3 +9,9 @@ dist/
 build/
 *.tsbuildinfo
 .DS_Store
+
+logs*.zip
+zip-check/
+zip-verify/
+LogFiles/
+.deploy/
