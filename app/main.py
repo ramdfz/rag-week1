@@ -6,7 +6,7 @@ import sys
 from collections.abc import Generator
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -23,6 +23,7 @@ from app.database import (
     get_message_by_id,
     get_message_by_index,
     init_chat_tables,
+    list_conversations,
     list_documents,
 )
 from app.rag import (
@@ -39,6 +40,8 @@ from app.schemas import (
     ChatResponse,
     ConversationMessage,
     ConversationMessagesResponse,
+    ConversationSummary,
+    ConversationsResponse,
     CitationDetailResponse,
     FeedbackRequest,
     FeedbackResponse,
@@ -54,6 +57,8 @@ init_chat_tables(settings.database_path)
 app = FastAPI(title="Meridian Health Partners RAG API", version="0.2.0")
 DIST_DIR = Path(__file__).resolve().parent.parent / "dist"
 ASSETS_DIR = DIST_DIR / "assets"
+CORPUS_ROOT = Path(__file__).resolve().parent.parent / "corpus"
+CORPUS_FORMAT_DIRS = {".pdf": "benefits", ".docx": "policies", ".md": "procedures"}
 
 if ASSETS_DIR.exists():
     app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
@@ -87,6 +92,11 @@ def require_api_key(x_api_key: str = Header(default="")) -> None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
 
+def require_admin_key(x_admin_key: str = Header(default="")) -> None:
+    if x_admin_key != settings.admin_api_key_secret:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+
+
 def settings_dep() -> Settings:
     return settings
 
@@ -112,6 +122,23 @@ def chat(
     if request.stream:
         return StreamingResponse(stream_chat_response(app_settings, request), media_type="text/event-stream")
     return answer_chat(app_settings, request.message, request.conversation_id)
+
+
+@app.get("/api/v1/conversations", response_model=ConversationsResponse, dependencies=[Depends(require_api_key)])
+def conversations() -> ConversationsResponse:
+    rows = list_conversations(settings.database_path)
+    return ConversationsResponse(
+        conversations=[
+            ConversationSummary(
+                id=row["id"],
+                preview=row["preview"],
+                message_count=row["message_count"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+            )
+            for row in rows
+        ]
+    )
 
 
 @app.get(
@@ -200,13 +227,12 @@ def stream_chat_response(app_settings: Settings, request: ChatRequest) -> Genera
     )
 
 
-@app.get("/api/v1/documents", response_model=DocumentsResponse, dependencies=[Depends(require_api_key)])
+@app.get("/api/v1/documents", response_model=DocumentsResponse, dependencies=[Depends(require_admin_key)])
 def documents() -> DocumentsResponse:
     return DocumentsResponse(documents=document_records())
 
 
-@app.post("/api/v1/documents/reindex", response_model=ReindexResponse, dependencies=[Depends(require_api_key)])
-def reindex() -> ReindexResponse:
+def run_ingest_and_report() -> ReindexResponse:
     result = subprocess.run([sys.executable, "ingest.py"], cwd=".", capture_output=True, text=True, timeout=900)
     if result.returncode != 0:
         raise HTTPException(status_code=500, detail=result.stderr[-2000:] or result.stdout[-2000:])
@@ -217,6 +243,32 @@ def reindex() -> ReindexResponse:
         total_documents=len(docs),
         total_chunks=sum(document.chunk_count for document in docs),
     )
+
+
+@app.post("/api/v1/documents/reindex", response_model=ReindexResponse, dependencies=[Depends(require_admin_key)])
+def reindex() -> ReindexResponse:
+    return run_ingest_and_report()
+
+
+@app.post("/api/v1/documents/upload", response_model=ReindexResponse, dependencies=[Depends(require_admin_key)])
+def upload_documents(files: list[UploadFile] = File(...)) -> ReindexResponse:
+    if not files:
+        raise HTTPException(status_code=400, detail="No files provided")
+    for upload in files:
+        name = Path(upload.filename or "").name  # strip any directory components (path-traversal guard)
+        ext = Path(name).suffix.lower()
+        if not name or ext not in CORPUS_FORMAT_DIRS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file '{upload.filename}'. Allowed formats: .pdf, .docx, .md",
+            )
+        content = upload.file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail=f"Empty file '{name}'")
+        target_dir = CORPUS_ROOT / CORPUS_FORMAT_DIRS[ext]
+        target_dir.mkdir(parents=True, exist_ok=True)
+        (target_dir / name).write_bytes(content)
+    return run_ingest_and_report()
 
 
 @app.get("/api/v1/citations/{chunk_id}", response_model=CitationDetailResponse, dependencies=[Depends(require_api_key)])

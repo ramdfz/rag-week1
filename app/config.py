@@ -27,6 +27,7 @@ class Settings:
     azure_search_api_key: str
     azure_search_index_name: str
     api_key_auth_secret: str
+    admin_api_key_secret: str
     database_path: str
     retrieval_min_score: float = 0.028
     semantic_ranking_enabled: bool = False
@@ -45,6 +46,7 @@ def get_settings() -> Settings:
         azure_search_api_key=required_env("AZURE_SEARCH_API_KEY"),
         azure_search_index_name=os.getenv("AZURE_SEARCH_INDEX_NAME", "meridian-knowledge-base"),
         api_key_auth_secret=required_env("API_KEY_AUTH_SECRET"),
+        admin_api_key_secret=required_env("ADMIN_API_KEY_SECRET"),
         database_path=database_path,
         retrieval_min_score=float(os.getenv("RETRIEVAL_MIN_SCORE", "0.028")),
         semantic_ranking_enabled=os.getenv("SEMANTIC_RANKING_ENABLED", "false").lower() in {"1", "true", "yes"},

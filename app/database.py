@@ -141,6 +141,28 @@ def format_history_for_prompt(rows: list[sqlite3.Row]) -> str:
     return "\n".join(lines)
 
 
+def list_conversations(database_path: str) -> list[sqlite3.Row]:
+    with connect(database_path) as connection:
+        return connection.execute(
+            """
+            SELECT
+                c.id,
+                c.created_at,
+                c.updated_at,
+                COALESCE(
+                    (SELECT m.content FROM messages m
+                     WHERE m.conversation_id = c.id AND m.role = 'user'
+                     ORDER BY m.created_at, m.rowid LIMIT 1),
+                    ''
+                ) AS preview,
+                (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id) AS message_count
+            FROM conversations c
+            WHERE EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id = c.id)
+            ORDER BY c.updated_at DESC, c.rowid DESC
+            """
+        ).fetchall()
+
+
 def list_documents(database_path: str) -> list[sqlite3.Row]:
     with connect(database_path) as connection:
         return connection.execute(

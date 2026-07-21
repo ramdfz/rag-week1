@@ -31,10 +31,40 @@ export type ConversationHistoryMessage = {
   created_at: number;
 };
 
+export type ConversationSummary = {
+  id: string;
+  preview: string;
+  message_count: number;
+  created_at: number;
+  updated_at: number;
+};
+
 export type FeedbackRating = "up" | "down";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const API_KEY = import.meta.env.VITE_API_KEY ?? "";
+const ADMIN_KEY_STORAGE = "meridian_admin_key";
+
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+export function setAdminKey(key: string) {
+  sessionStorage.setItem(ADMIN_KEY_STORAGE, key);
+}
+
+export function getAdminKey() {
+  return sessionStorage.getItem(ADMIN_KEY_STORAGE) ?? "";
+}
+
+export function clearAdminKey() {
+  sessionStorage.removeItem(ADMIN_KEY_STORAGE);
+}
 
 function headers() {
   return {
@@ -46,14 +76,14 @@ function headers() {
 async function parseJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(message || `Request failed with ${response.status}`);
+    throw new ApiError(response.status, message || `Request failed with ${response.status}`);
   }
   return response.json() as Promise<T>;
 }
 
 export async function getDocuments() {
   const response = await fetch(`${API_BASE_URL}/api/v1/documents`, {
-    headers: { "X-API-Key": API_KEY }
+    headers: { "X-Admin-Key": getAdminKey() }
   });
   return parseJson<{ documents: DocumentRecord[] }>(response);
 }
@@ -61,9 +91,28 @@ export async function getDocuments() {
 export async function reindexDocuments() {
   const response = await fetch(`${API_BASE_URL}/api/v1/documents/reindex`, {
     method: "POST",
-    headers: { "X-API-Key": API_KEY }
+    headers: { "X-Admin-Key": getAdminKey() }
   });
   return parseJson<{ documents: DocumentRecord[]; total_documents: number; total_chunks: number }>(response);
+}
+
+export async function uploadDocuments(files: File[]) {
+  const form = new FormData();
+  files.forEach((file) => form.append("files", file));
+  // Do NOT set Content-Type — the browser sets the multipart boundary automatically.
+  const response = await fetch(`${API_BASE_URL}/api/v1/documents/upload`, {
+    method: "POST",
+    headers: { "X-Admin-Key": getAdminKey() },
+    body: form
+  });
+  return parseJson<{ documents: DocumentRecord[]; total_documents: number; total_chunks: number }>(response);
+}
+
+export async function getConversations() {
+  const response = await fetch(`${API_BASE_URL}/api/v1/conversations`, {
+    headers: { "X-API-Key": API_KEY }
+  });
+  return parseJson<{ conversations: ConversationSummary[] }>(response);
 }
 
 export async function getCitation(chunkId: string) {

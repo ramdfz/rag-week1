@@ -34,6 +34,18 @@ class ConversationMessagesResponse(BaseModel):
     messages: list[ConversationMessage]
 
 
+class ConversationSummary(BaseModel):
+    id: str
+    preview: str
+    message_count: int
+    created_at: int
+    updated_at: int
+
+
+class ConversationsResponse(BaseModel):
+    conversations: list[ConversationSummary]
+
+
 class FeedbackRequest(BaseModel):
     message_id: str | None = None
     conversation_id: str | None = None

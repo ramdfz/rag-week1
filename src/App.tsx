@@ -4,15 +4,20 @@ import {
   CheckCircle2,
   Database,
   FileText,
+  Lock,
+  LockKeyhole,
   Loader2,
+  MessageSquare,
   Mic,
   MicOff,
+  Plus,
   RefreshCw,
   Send,
   ShieldCheck,
   Square,
   ThumbsDown,
   ThumbsUp,
+  Upload,
   User,
   Volume2,
   X
@@ -26,16 +31,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Tabs } from "./components/ui/tabs";
 import { Textarea } from "./components/ui/textarea";
 import {
+  ApiError,
   Citation,
   CitationDetail,
   ConversationHistoryMessage,
+  ConversationSummary,
   DocumentRecord,
+  clearAdminKey,
+  getAdminKey,
   getCitation,
   getConversationMessages,
+  getConversations,
   getDocuments,
   reindexDocuments,
+  setAdminKey,
   submitFeedback,
-  streamChat
+  streamChat,
+  uploadDocuments
 } from "./lib/api";
 import { cn } from "./lib/utils";
 
@@ -126,10 +138,14 @@ function App() {
   const [selectedCitation, setSelectedCitation] = useState<CitationDetail | null>(null);
   const [citationLoading, setCitationLoading] = useState(false);
   const [citationError, setCitationError] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [adminError, setAdminError] = useState<string | null>(null);
+  const [adminAuthed, setAdminAuthed] = useState<boolean>(false);
+  const [adminKeyInput, setAdminKeyInput] = useState("");
   const [reindexing, setReindexing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [recognizing, setRecognizing] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [feedbackNotes, setFeedbackNotes] = useState<Record<string, string>>({});
@@ -152,22 +168,81 @@ function App() {
 
   useEffect(() => {
     void restoreConversation();
+    void loadConversations();
   }, []);
 
   useEffect(() => {
-    if (view === "admin") void loadDocuments();
+    if (view === "admin" && getAdminKey()) void loadDocuments();
   }, [view]);
 
+  async function loadConversations() {
+    try {
+      const payload = await getConversations();
+      setConversations(payload.conversations);
+    } catch {
+      // Conversation list is non-critical; ignore transient failures.
+    }
+  }
+
+  function isAuthError(error: unknown) {
+    return error instanceof ApiError && (error.status === 401 || error.status === 403);
+  }
+
   async function loadDocuments() {
+    if (!getAdminKey()) {
+      setAdminAuthed(false);
+      return;
+    }
     setDocumentsLoading(true);
     setAdminError(null);
     try {
       const payload = await getDocuments();
       setDocuments(payload.documents);
+      setAdminAuthed(true);
     } catch (error) {
-      setAdminError(error instanceof Error ? error.message : "Unable to load documents.");
+      if (isAuthError(error)) {
+        clearAdminKey();
+        setAdminAuthed(false);
+        setAdminError("Admin key rejected. Enter a valid admin key.");
+      } else {
+        setAdminError(error instanceof Error ? error.message : "Unable to load documents.");
+      }
     } finally {
       setDocumentsLoading(false);
+    }
+  }
+
+  async function unlockAdmin() {
+    const key = adminKeyInput.trim();
+    if (!key) return;
+    setAdminKey(key);
+    setAdminKeyInput("");
+    await loadDocuments();
+  }
+
+  function lockAdmin() {
+    clearAdminKey();
+    setAdminAuthed(false);
+    setDocuments([]);
+    setAdminError(null);
+  }
+
+  async function switchConversation(id: string) {
+    if (id === conversationId) return;
+    window.speechSynthesis?.cancel();
+    recognitionRef.current?.stop();
+    setRecognizing(false);
+    setSelectedCitation(null);
+    setCitationError(null);
+    setInput("");
+    setFeedbackNotes({});
+    setFeedbackStatus({});
+    try {
+      const payload = await getConversationMessages(id);
+      setActiveConversation(payload.conversation_id);
+      hydrateMessages(payload.messages);
+    } catch {
+      await loadConversations();
     }
   }
 
@@ -239,9 +314,35 @@ function App() {
       const payload = await reindexDocuments();
       setDocuments(payload.documents);
     } catch (error) {
-      setAdminError(error instanceof Error ? error.message : "Re-index failed.");
+      if (isAuthError(error)) {
+        clearAdminKey();
+        setAdminAuthed(false);
+        setAdminError("Admin key rejected. Enter a valid admin key.");
+      } else {
+        setAdminError(error instanceof Error ? error.message : "Re-index failed.");
+      }
     } finally {
       setReindexing(false);
+    }
+  }
+
+  async function handleUpload(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    setAdminError(null);
+    try {
+      const payload = await uploadDocuments(Array.from(files));
+      setDocuments(payload.documents);
+    } catch (error) {
+      if (isAuthError(error)) {
+        clearAdminKey();
+        setAdminAuthed(false);
+        setAdminError("Admin key rejected. Enter a valid admin key.");
+      } else {
+        setAdminError(error instanceof Error ? error.message : "Upload failed.");
+      }
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -287,6 +388,7 @@ function App() {
                 : message
             )
           );
+          void loadConversations();
         }
       });
     } catch (error) {
@@ -400,7 +502,13 @@ function App() {
       </header>
 
       {view === "chat" ? (
-        <section className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:px-8">
+        <section className="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)_360px] lg:px-8">
+          <ConversationsSidebar
+            activeId={conversationId}
+            conversations={conversations}
+            onNew={startNewConversation}
+            onSelect={(id) => void switchConversation(id)}
+          />
           <Card className="flex min-h-[calc(100vh-140px)] flex-col overflow-hidden">
             <CardHeader className="border-b border-slate-100">
               <div className="flex items-center justify-between gap-3">
@@ -588,14 +696,24 @@ function App() {
             }}
           />
         </section>
-      ) : (
+      ) : adminAuthed ? (
         <AdminPage
           documents={documents}
           error={adminError}
           loading={documentsLoading}
+          onLock={lockAdmin}
           onRefresh={() => void loadDocuments()}
           onReindex={() => void handleReindex()}
+          onUpload={(files) => void handleUpload(files)}
           reindexing={reindexing}
+          uploading={uploading}
+        />
+      ) : (
+        <AdminLogin
+          error={adminError}
+          onChange={setAdminKeyInput}
+          onSubmit={() => void unlockAdmin()}
+          value={adminKeyInput}
         />
       )}
     </main>
@@ -664,13 +782,18 @@ type AdminPageProps = {
   documents: DocumentRecord[];
   error: string | null;
   loading: boolean;
+  onLock: () => void;
   onRefresh: () => void;
   onReindex: () => void;
+  onUpload: (files: FileList | null) => void;
   reindexing: boolean;
+  uploading: boolean;
 };
 
-function AdminPage({ documents, error, loading, onRefresh, onReindex, reindexing }: AdminPageProps) {
+function AdminPage({ documents, error, loading, onLock, onRefresh, onReindex, onUpload, reindexing, uploading }: AdminPageProps) {
   const totalChunks = documents.reduce((total, document) => total + document.chunk_count, 0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const busy = reindexing || uploading;
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
@@ -682,25 +805,49 @@ function AdminPage({ documents, error, loading, onRefresh, onReindex, reindexing
               <p className="mt-1 text-sm text-slate-500">
                 {documents.length} documents · {totalChunks} chunks
               </p>
+              <p className="mt-0.5 text-xs text-slate-400">
+                Upload adds files to the corpus and re-indexes. Accepted: PDF, DOCX, Markdown (.md).
+              </p>
             </div>
             <div className="flex gap-2">
-              <Button disabled={loading || reindexing} onClick={onRefresh} type="button" variant="outline">
+              <input
+                accept=".pdf,.docx,.md"
+                className="hidden"
+                multiple
+                onChange={(event) => {
+                  onUpload(event.target.files);
+                  event.target.value = "";
+                }}
+                ref={fileInputRef}
+                type="file"
+              />
+              <Button disabled={busy} onClick={() => fileInputRef.current?.click()} type="button" variant="brand">
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Upload docs
+              </Button>
+              <Button disabled={loading || busy} onClick={onRefresh} type="button" variant="outline">
                 <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
                 Refresh
               </Button>
-              <Button disabled={reindexing} onClick={onReindex} type="button" variant="brand">
+              <Button disabled={busy} onClick={onReindex} type="button" variant="outline">
                 {reindexing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
                 Re-index
+              </Button>
+              <Button disabled={busy} onClick={onLock} type="button" variant="outline">
+                <Lock className="h-4 w-4" />
+                Lock
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {error && <div className="border-b border-red-100 bg-red-50 px-5 py-3 text-sm text-[#E3434A]">{error}</div>}
-          {reindexing && (
+          {busy && (
             <div className="flex items-center gap-2 border-b border-[#FC7900]/20 bg-[#F4AD0B]/10 px-5 py-3 text-sm text-[#182127]">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Re-indexing corpus and refreshing Azure AI Search
+              {uploading
+                ? "Uploading documents, then re-indexing the corpus"
+                : "Re-indexing corpus and refreshing Azure AI Search"}
             </div>
           )}
           <div className="overflow-x-auto">
@@ -738,6 +885,116 @@ function AdminPage({ documents, error, loading, onRefresh, onReindex, reindexing
               Index metadata loaded from SQLite.
             </div>
           )}
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
+
+type ConversationsSidebarProps = {
+  activeId: string | null;
+  conversations: ConversationSummary[];
+  onNew: () => void;
+  onSelect: (id: string) => void;
+};
+
+function ConversationsSidebar({ activeId, conversations, onNew, onSelect }: ConversationsSidebarProps) {
+  return (
+    <aside className="min-h-[calc(100vh-140px)]">
+      <Card className="sticky top-5 flex max-h-[calc(100vh-140px)] flex-col overflow-hidden">
+        <CardHeader className="border-b border-slate-100">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle>Conversations</CardTitle>
+            <Button aria-label="New conversation" onClick={onNew} size="sm" type="button" variant="brand">
+              <Plus className="h-4 w-4" />
+              New
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-y-auto p-2">
+          {conversations.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center px-4 py-10 text-center text-sm text-slate-500">
+              <MessageSquare className="mb-3 h-8 w-8 text-slate-300" />
+              No past conversations yet.
+            </div>
+          ) : (
+            <ul className="space-y-1">
+              {conversations.map((conversation) => (
+                <li key={conversation.id}>
+                  <button
+                    className={cn(
+                      "flex w-full flex-col gap-1 rounded-lg border px-3 py-2 text-left transition",
+                      conversation.id === activeId
+                        ? "border-[#FC7900]/30 bg-[#F4AD0B]/10"
+                        : "border-transparent hover:bg-slate-50"
+                    )}
+                    onClick={() => onSelect(conversation.id)}
+                    type="button"
+                  >
+                    <span className="line-clamp-2 text-sm font-medium text-[#182127]">
+                      {conversation.preview || "Untitled conversation"}
+                    </span>
+                    <span className="text-xs text-slate-400">{conversation.message_count} messages</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </aside>
+  );
+}
+
+type AdminLoginProps = {
+  error: string | null;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  value: string;
+};
+
+function AdminLogin({ error, onChange, onSubmit, value }: AdminLoginProps) {
+  return (
+    <section className="mx-auto max-w-md px-4 py-16 sm:px-6 lg:px-8">
+      <Card>
+        <CardHeader className="border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#182127] text-white">
+              <LockKeyhole className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Admin access</CardTitle>
+              <p className="mt-1 text-sm text-slate-500">Enter the admin key to manage the index.</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-5">
+          <form
+            className="space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSubmit();
+            }}
+          >
+            <input
+              aria-label="Admin key"
+              autoFocus
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#FC7900] focus:ring-2 focus:ring-[#FC7900]/20"
+              onChange={(event) => onChange(event.target.value)}
+              placeholder="Admin key"
+              type="password"
+              value={value}
+            />
+            {error && <p className="text-sm text-[#E3434A]">{error}</p>}
+            <Button className="w-full" disabled={value.trim().length === 0} type="submit" variant="brand">
+              <ShieldCheck className="h-4 w-4" />
+              Unlock admin
+            </Button>
+            <p className="text-xs text-slate-400">
+              Regular employees use the chat without this key. Only the admin key unlocks document management and
+              re-indexing.
+            </p>
+          </form>
         </CardContent>
       </Card>
     </section>
