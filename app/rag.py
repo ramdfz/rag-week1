@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 
 from app.azure_clients import RetrievedChunk, chat_completion, hybrid_retrieve
@@ -132,22 +133,30 @@ def citations_from_chunks(chunks: list[RetrievedChunk]) -> list[Citation]:
 
 
 def filter_citations_from_response(response_text: str, chunks: list[RetrievedChunk]) -> tuple[str, list[Citation]]:
-    marker = re.search(r"<used_chunks>\s*([^<]+?)\s*</used_chunks>", response_text, flags=re.IGNORECASE)
+    marker = re.search(r"<used_chunks>\s*([^<]*?)\s*</used_chunks>", response_text, flags=re.IGNORECASE)
     selected: list[RetrievedChunk] = []
     if marker:
         indexes = {int(match) for match in re.findall(r"\d+", marker.group(1))}
         selected = [chunk for index, chunk in enumerate(chunks, start=1) if index in indexes]
-        response_text = (response_text[: marker.start()] + response_text[marker.end() :]).strip()
-    else:
-        lowered = response_text.lower()
-        for chunk in chunks:
-            document_mentioned = chunk.document.lower() in lowered
-            section_mentioned = bool(chunk.section) and chunk.section.lower() in lowered
-            chunk_mentioned = chunk.chunk_id.lower() in lowered
-            if document_mentioned or section_mentioned or chunk_mentioned:
-                selected.append(chunk)
 
-    return response_text, citations_from_chunks(selected)
+    # Always strip the machine-readable marker (well-formed, trailing, or malformed) from display text.
+    response_text = re.sub(r"\s*<used_chunks>.*?(?:</used_chunks>|$)", "", response_text, flags=re.IGNORECASE | re.DOTALL).strip()
+
+    # Fallback: models don't reliably emit <used_chunks>. If none was parsed, cite the retrieved
+    # context the answer was grounded in, so sources are always shown for a grounded answer.
+    if not selected:
+        selected = list(chunks)
+
+    # De-duplicate by source document so the UI shows one clean chip per document.
+    seen_documents: set[str] = set()
+    deduped: list[RetrievedChunk] = []
+    for chunk in selected:
+        if chunk.document in seen_documents:
+            continue
+        seen_documents.add(chunk.document)
+        deduped.append(chunk)
+
+    return response_text, citations_from_chunks(deduped)
 
 
 def expand_retrieval_query(message: str) -> str:
@@ -229,5 +238,11 @@ def answer_chat(settings: Settings, message: str, conversation_id: str | None) -
         response_text, citations = filter_citations_from_response(response_text, chunks)
 
     add_message(settings.database_path, conversation_id, "user", message)
-    add_message(settings.database_path, conversation_id, "assistant", response_text)
+    add_message(
+        settings.database_path,
+        conversation_id,
+        "assistant",
+        response_text,
+        json.dumps([citation.model_dump() for citation in citations]),
+    )
     return ChatResponse(response=response_text, citations=citations, conversation_id=conversation_id)

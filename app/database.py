@@ -31,12 +31,17 @@ def init_chat_tables(database_path: str) -> None:
                 conversation_id TEXT NOT NULL,
                 role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
                 content TEXT NOT NULL,
+                citations TEXT,
                 created_at INTEGER NOT NULL,
                 FOREIGN KEY (conversation_id) REFERENCES conversations(id)
             )
             """
         )
         connection.execute("CREATE INDEX IF NOT EXISTS idx_messages_conversation_created ON messages(conversation_id, created_at)")
+        # Migration: add the citations column to databases created before it existed.
+        message_columns = [row[1] for row in connection.execute("PRAGMA table_info(messages)").fetchall()]
+        if "citations" not in message_columns:
+            connection.execute("ALTER TABLE messages ADD COLUMN citations TEXT")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS feedback (
@@ -67,12 +72,12 @@ def ensure_conversation(database_path: str, conversation_id: str | None) -> str:
     return conversation_id
 
 
-def add_message(database_path: str, conversation_id: str, role: str, content: str) -> None:
+def add_message(database_path: str, conversation_id: str, role: str, content: str, citations: str | None = None) -> None:
     now = int(time.time())
     with connect(database_path) as connection:
         connection.execute(
-            "INSERT INTO messages (id, conversation_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)",
-            (str(uuid.uuid4()), conversation_id, role, content, now),
+            "INSERT INTO messages (id, conversation_id, role, content, citations, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (str(uuid.uuid4()), conversation_id, role, content, citations, now),
         )
         connection.execute("UPDATE conversations SET updated_at = ? WHERE id = ?", (now, conversation_id))
 
@@ -80,7 +85,7 @@ def add_message(database_path: str, conversation_id: str, role: str, content: st
 def get_history(database_path: str, conversation_id: str) -> list[sqlite3.Row]:
     with connect(database_path) as connection:
         return connection.execute(
-            "SELECT role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at, rowid",
+            "SELECT role, content, created_at, citations FROM messages WHERE conversation_id = ? ORDER BY created_at, rowid",
             (conversation_id,),
         ).fetchall()
 

@@ -1,0 +1,110 @@
+<mxfile host="app.diagrams.net" agent="Meridian RAG" version="24.7.0">
+  <diagram id="meridian-rag-arch" name="Meridian RAG Architecture">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="Meridian Health Partners — RAG Knowledge Chatbot (Azure)" style="text;html=1;fontStyle=1;fontSize=18;fontColor=#182127;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="60" y="20" width="760" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- User -->
+        <mxCell id="user" value="Meridian Employee&#10;(browser)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#182127;fontColor=#FFFFFF;strokeColor=#182127;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="540" y="70" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Azure App Service container -->
+        <mxCell id="appsvc" value="Azure App Service · Linux B1 · Central US&#10;Single Docker container (image via Azure Container Registry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7EC;strokeColor=#FC7900;strokeWidth=2;verticalAlign=top;align=center;fontStyle=1;fontSize=12;fontColor=#8A4B00;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="120" y="180" width="920" height="290" as="geometry" />
+        </mxCell>
+
+        <mxCell id="spa" value="React SPA (Vite)&#10;chat · streaming · history sidebar&#10;citations · admin · doc upload" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#182127;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="150" y="235" width="240" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api" value="FastAPI · /api/v1 (versioned)&#10;Pydantic models · SSE streaming&#10;two-tier auth: X-API-Key (employee)&#10;+ X-Admin-Key (admin)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#182127;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="430" y="235" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rag" value="RAG orchestration&#10;query expansion · context assembly&#10;hardened system prompt&#10;citation extraction + filtering" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#182127;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="760" y="235" width="250" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gate" value="Relevance gate (two-signal)&#10;vector score + lexical/domain overlap → refuse pre-LLM if out of scope" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDEDED;strokeColor=#E3434A;fontSize=12;align=center;fontColor=#8A1F24;" vertex="1" parent="1">
+          <mxGeometry x="430" y="360" width="580" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Azure AI Search -->
+        <mxCell id="search" value="Azure AI Search — Basic&#10;index: meridian-knowledge-base&#10;hybrid: keyword + HNSW vector&#10;semantic ranker: configured, off by default" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#1C7293;fontSize=12;align=center;fontColor=#0B3B4D;" vertex="1" parent="1">
+          <mxGeometry x="120" y="540" width="360" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Azure OpenAI / Foundry -->
+        <mxCell id="aoai" value="Azure OpenAI / AI Foundry&#10;text-embedding-3-large (3072-dim)&#10;GPT-5.5 — primary generation&#10;DeepSeek-V3.2 — cost comparison" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#1C7293;fontSize=12;align=center;fontColor=#0B3B4D;" vertex="1" parent="1">
+          <mxGeometry x="680" y="540" width="360" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- SQLite -->
+        <mxCell id="sqlite" value="SQLite (meridian.db)&#10;documents · chunks · conversations&#10;messages · feedback&#10;(vectors live in Azure AI Search)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#182127;fontColor=#FFFFFF;strokeColor=#182127;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="120" y="720" width="360" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- Ingestion pipeline -->
+        <mxCell id="ingest" value="Offline ingestion pipeline — ingest.py&#10;(run manually or via /documents/reindex + /documents/upload)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F4F5F6;strokeColor=#5B666E;verticalAlign=top;align=center;fontStyle=1;fontSize=11;fontColor=#37424A;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="560" y="710" width="480" height="160" as="geometry" />
+        </mxCell>
+
+        <mxCell id="corpus" value="Corpus (19 docs)&#10;DOCX · PDF · Markdown" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#5B666E;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="580" y="760" width="180" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="chunk" value="Parse (docx/pdf/md)&#10;→ structure-aware chunk&#10;~400–600 tok, 15% overlap" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#5B666E;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="800" y="760" width="220" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ================= EDGES ================= -->
+        <mxCell id="e_user_api" value="HTTPS · X-API-Key / X-Admin-Key" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#182127;fontSize=10;fontColor=#182127;endArrow=block;" edge="1" parent="1" source="user" target="api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_spa_api" value="served same origin · SSE tokens" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#FC7900;fontSize=10;fontColor=#8A4B00;startArrow=classic;endArrow=classic;" edge="1" parent="1" source="spa" target="api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_api_gate" value="user query" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#182127;fontSize=10;endArrow=block;" edge="1" parent="1" source="api" target="gate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_gate_rag" value="pass" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#2E7D5B;fontSize=10;fontColor=#1B5138;endArrow=block;" edge="1" parent="1" source="gate" target="rag">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_rag_search" value="hybrid retrieve · top-5 (top doc ≤ 2 chunks)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#1C7293;fontSize=10;fontColor=#0B3B4D;startArrow=classic;endArrow=classic;" edge="1" parent="1" source="rag" target="search">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_rag_aoai" value="embed query + GPT-5.5 completion" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#1C7293;fontSize=10;fontColor=#0B3B4D;startArrow=classic;endArrow=classic;" edge="1" parent="1" source="rag" target="aoai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_api_sqlite" value="conversations · messages · feedback" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#182127;fontSize=10;endArrow=block;" edge="1" parent="1" source="api" target="sqlite">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_corpus_chunk" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#5B666E;endArrow=block;" edge="1" parent="1" source="corpus" target="chunk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ingest_aoai" value="embed chunks" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;strokeColor=#5B666E;fontSize=10;endArrow=block;" edge="1" parent="1" source="chunk" target="aoai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ingest_search" value="upsert vectors + text" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;strokeColor=#5B666E;fontSize=10;endArrow=block;" edge="1" parent="1" source="ingest" target="search">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ingest_sqlite" value="write chunk metadata" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;strokeColor=#5B666E;fontSize=10;endArrow=block;" edge="1" parent="1" source="ingest" target="sqlite">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend" value="Legend:  ─ solid = online request path   ┄ dashed = offline ingestion   ● orange = App Service boundary   ● blue = Azure managed service" style="text;html=1;fontSize=10;fontColor=#5B666E;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="120" y="900" width="920" height="20" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

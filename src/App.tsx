@@ -10,11 +10,13 @@ import {
   MessageSquare,
   Mic,
   MicOff,
+  Moon,
   Plus,
   RefreshCw,
   Send,
   ShieldCheck,
   Square,
+  Sun,
   ThumbsDown,
   ThumbsUp,
   Upload,
@@ -129,6 +131,9 @@ function renderText(text: string) {
 
 function App() {
   const [view, setView] = useState("chat");
+  const [theme, setTheme] = useState<"dark" | "light">(() =>
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light"
+  );
   const [messages, setMessages] = useState<ChatMessage[]>(freshMessages);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
@@ -266,7 +271,7 @@ function App() {
         id: uid(),
         role: message.role,
         content: message.content,
-        citations: [],
+        citations: message.citations ?? [],
         persistedIndex: index
       }))
     );
@@ -477,6 +482,19 @@ function App() {
     window.speechSynthesis.speak(utterance);
   }
 
+  function toggleTheme() {
+    setTheme((current) => {
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.classList.toggle("dark", next === "dark");
+      try {
+        localStorage.setItem("meridian_theme", next);
+      } catch {
+        /* ignore storage errors */
+      }
+      return next;
+    });
+  }
+
   return (
     <main className="min-h-screen bg-[#f7f8fa]">
       <header className="border-b border-slate-200 bg-white">
@@ -490,14 +508,25 @@ function App() {
               <p className="text-sm text-slate-500">DataFactZ Week 1 RAG workspace</p>
             </div>
           </div>
-          <Tabs
-            value={view}
-            onValueChange={setView}
-            items={[
-              { value: "chat", label: "Chat", icon: <Bot className="h-4 w-4" /> },
-              { value: "admin", label: "Admin", icon: <Database className="h-4 w-4" /> }
-            ]}
-          />
+          <div className="flex items-center gap-2">
+            <Tabs
+              value={view}
+              onValueChange={setView}
+              items={[
+                { value: "chat", label: "Chat", icon: <Bot className="h-4 w-4" /> },
+                { value: "admin", label: "Admin", icon: <Database className="h-4 w-4" /> }
+              ]}
+            />
+            <Button
+              aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+              onClick={toggleTheme}
+              size="icon"
+              type="button"
+              variant="outline"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
       </header>
 

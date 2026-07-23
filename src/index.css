@@ -18,6 +18,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  /* Pre-render base is dark (default theme); the app's <main> paints the chosen theme on mount. */
+  background: #0d1117;
 }
 
 button,
@@ -37,3 +39,50 @@ input {
 .message-markdown strong {
   font-weight: 750;
 }
+
+/* =========================================================================
+   Dark theme — active when <html class="dark"> (the default; toggle in header).
+   Central override of the light utility palette so components need no changes.
+   These rules are unlayered, so they win over Tailwind's layered utilities.
+   ========================================================================= */
+html.dark {
+  color-scheme: dark;
+  background: #0d1117;
+  color: #e6edf3;
+}
+html.dark body {
+  background: #0d1117;
+}
+
+/* Surfaces */
+.dark .bg-\[\#f7f8fa\] { background-color: #0d1117; }
+.dark .bg-white { background-color: #161b22; }
+.dark .bg-slate-50 { background-color: #1c232b; }
+.dark .bg-slate-100 { background-color: #262e37; }
+.dark .bg-\[\#182127\] { background-color: #283039; }
+
+/* Borders / dividers */
+.dark .border-slate-200 { border-color: #2b333c; }
+.dark .border-slate-100 { border-color: #222a31; }
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #222a31; }
+
+/* Text */
+.dark .text-\[\#182127\] { color: #e6edf3; }
+.dark .text-slate-800 { color: #cdd5dc; }
+.dark .text-slate-700 { color: #c2cad1; }
+.dark .text-slate-600 { color: #aab3bb; }
+.dark .text-slate-500 { color: #8b949e; }
+.dark .text-slate-400 { color: #6e7781; }
+.dark .text-slate-300 { color: #495159; }
+
+/* Hover states */
+.dark .hover\:bg-slate-50:hover { background-color: #1c232b; }
+.dark .hover\:bg-slate-100:hover { background-color: #262e37; }
+.dark .hover\:bg-\[\#26333b\]:hover { background-color: #36444e; }
+
+/* Error surfaces (keep the red text; darken the fill) */
+.dark .bg-red-50 { background-color: #2a1416; }
+.dark .border-red-100 { border-color: #5a2327; }
+
+/* Inline code chip stays legible on dark */
+.dark code.bg-slate-100 { color: #e6edf3; }

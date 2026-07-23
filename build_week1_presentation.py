@@ -297,49 +297,11 @@ footer(s, 2)
 s = slide(); bg(s)
 kicker(s, "Architecture Overview")
 title(s, "One deployable unit: React and FastAPI from a single origin")
-boxes = [
-    ("React SPA", "Chat · history · citations", "grad"),
-    ("FastAPI", "Single origin · 2-key auth · SSE", "grad"),
-    ("Relevance gate", "Two-signal · refuse pre-LLM", "grad"),
-    ("Azure AI Search", "Hybrid: vector + keyword", NAVY_SOFT),
-    ("Azure OpenAI", "GPT-5.5 · embeddings", NAVY_SOFT),
-]
-bx, by, bw, bh, gap = Inches(0.7), Inches(2.5), Inches(2.32), Inches(1.5), Inches(0.18)
-for i, (h, sub, acc) in enumerate(boxes):
-    x = bx + i * (bw + gap)
-    rrect(s, x, by, bw, bh, fill=CARD, line=CARD_LINE, radius=0.09, shadow=True)
-    if acc == "grad":
-        gradient_bar(s, x, by, bw, Inches(0.12))
-    else:
-        rrect(s, x, by, bw, Inches(0.12), fill=acc, line=None, radius=0.02)
-    _, tf = textbox(s, x + Inches(0.16), by + Inches(0.28), bw - Inches(0.32), bh - Inches(0.4),
-                    anchor=MSO_ANCHOR.MIDDLE)
-    para(tf, h, size=14, bold=True, color=NAVY, first=True, space_after=4, align=PP_ALIGN.CENTER)
-    para(tf, sub, size=10, color=GREY, align=PP_ALIGN.CENTER)
-    if i < len(boxes) - 1:
-        ar = s.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW, x + bw + Inches(0.005),
-                                by + bh / 2 - Inches(0.09), gap - Inches(0.01), Inches(0.18))
-        ar.fill.solid(); ar.fill.fore_color.rgb = ORANGE
-        ar.line.fill.background(); ar.shadow.inherit = False
-        try:
-            ar.adjustments[0] = 0.5; ar.adjustments[1] = 0.55
-        except Exception:
-            pass
-rrect(s, Inches(0.7), Inches(4.4), Inches(5.4), Inches(1.0), fill=LIGHT, line=CARD_LINE, radius=0.1)
-_, tf = textbox(s, Inches(0.95), Inches(4.52), Inches(4.9), Inches(0.78), anchor=MSO_ANCHOR.MIDDLE)
-para(tf, [("SQLite  ", {"bold": True, "size": 14, "color": NAVY}),
-          ("— conversations, messages, chunk metadata, feedback. Vectors live in Azure AI Search, not here.",
-           {"size": 11, "color": GREY})], first=True, space_after=0)
-rrect(s, Inches(6.3), Inches(4.4), Inches(6.3), Inches(1.0), fill=LIGHT, line=CARD_LINE, radius=0.1)
-_, tf = textbox(s, Inches(6.55), Inches(4.52), Inches(5.8), Inches(0.78), anchor=MSO_ANCHOR.MIDDLE)
-para(tf, [("Deployment  ", {"bold": True, "size": 14, "color": NAVY}),
-          ("— Docker container on Azure App Service (Linux B1, Central US), image via Azure Container Registry.",
-           {"size": 11, "color": GREY})], first=True, space_after=0)
-card_with_title(
-    s, Inches(0.7), Inches(5.65), Inches(11.9), Inches(1.05),
-    "Why a single unit",
-    [{"t": "Avoids CORS configuration entirely and keeps the pilot's operational surface to one App Service resource, one deployment pipeline, one place to check logs.",
-      "size": 12.5, "bullet": True}], accent="grad")
+arch_pic = s.shapes.add_picture("Meridian_Architecture.png", Inches(0), Inches(2.02), height=Inches(4.55))
+arch_pic.left = Inches((13.333 - arch_pic.width / 914400) / 2)
+_, tf = textbox(s, Inches(0.7), Inches(6.66), Inches(11.9), Inches(0.32))
+para(tf, "Single deployable unit — no CORS, one pipeline, one place for logs. Online path solid; offline ingestion dashed.",
+     size=11, italic=True, color=GREY, first=True, space_after=0, align=PP_ALIGN.CENTER)
 footer(s, 3)
 
 # ============================================================= SLIDE 4 ====
@@ -595,21 +557,23 @@ scale_card(
     [
         ("App Service B1", "~$13 / mo", NAVY),
         ("Azure AI Search Basic", "~$75 / mo", NAVY),
-        ("Generation (GPT-5.5)", "[VERIFY] — compare_models.py output not captured", RED),
+        ("Generation (GPT-5.5)", "~$33 / mo   ($16.35 / 1K queries)", NAVY),
+        ("All-in", "~$121 / mo   (~$1.21 / user)", ORANGE),
     ])
 scale_card(
     Inches(6.75), "Production — 5,000 users",
     "Same query rate  →  ~100,000 queries / month",
     [
-        ("App Service Standard", "Always On + autoscale", NAVY),
-        ("Azure AI Search S1", "multi-partition / replica", NAVY),
-        ("Generation", "[VERIFY] — ~ pilot figure × 50 (illustrative)", RED),
+        ("App Service Standard S1", "~$73 / mo", NAVY),
+        ("Azure AI Search S1", "~$245 / mo", NAVY),
+        ("Generation (GPT-5.5)", "~$1,635 / mo   ($16.35 / 1K)", NAVY),
+        ("All-in", "~$1,953 / mo   ·   ~$486 w/ DeepSeek", ORANGE),
     ])
 rrect(s, Inches(0.7), Inches(5.75), Inches(11.9), Inches(1.0), fill=NAVY, line=None, radius=0.1)
 gradient_bar(s, Inches(0.7), Inches(5.75), Inches(0.1), Inches(1.0))
 _, tf = textbox(s, Inches(1.05), Inches(5.88), Inches(11.3), Inches(0.78), anchor=MSO_ANCHOR.MIDDLE)
 para(tf, [("Key lever, not infrastructure tier:  ", {"bold": True, "color": GOLD, "size": 13}),
-          ("generation cost dominates as volume grows. At production scale a cost-tiered router — DeepSeek default, GPT-5.5 escalation on low-confidence retrieval — is the recommended architecture.",
+          ("generation cost dominates as volume grows — at 100K queries/mo it is ~$1,635 vs ~$318 infra. A cost-tiered router (DeepSeek default, GPT-5.5 escalation on low-confidence retrieval) cuts the monthly total from ~$1,953 to ~$486.",
            {"color": LIGHTTX, "size": 12.5})], first=True, space_after=0)
 footer(s, 11)
 

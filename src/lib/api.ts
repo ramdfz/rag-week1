@@ -29,6 +29,7 @@ export type ConversationHistoryMessage = {
   role: "user" | "assistant";
   content: string;
   created_at: number;
+  citations: Citation[];
 };
 
 export type ConversationSummary = {

@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" font-family="Segoe UI, Arial, sans-serif">
+<rect x="0" y="0" width="1440" height="900" fill="#FFFFFF"/>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-end"><path d="M0,0 L10,5 L0,10 z" fill="#37424A"/></marker>
+  <marker id="arrowb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-end"><path d="M0,0 L10,5 L0,10 z" fill="#1C7293"/></marker>
+  <marker id="arrowg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-end"><path d="M0,0 L10,5 L0,10 z" fill="#8A8F94"/></marker>
+</defs>
+<text x="40" y="44" font-size="22" font-weight="700" fill="#182127">Meridian Health Partners — RAG Knowledge Chatbot (Azure)</text>
+<rect x="600" y="78" width="240" height="54" rx="12" fill="#182127" stroke="#182127" stroke-width="1"/>
+<text x="720" y="102" text-anchor="middle">
+<tspan x="720" dy="0" font-size="13" fill="#FFFFFF" font-weight="700">Meridian Employee</tspan>
+<tspan x="720" dy="15" font-size="11" fill="#C7CDD2" font-weight="400">browser</tspan>
+</text>
+<rect x="70" y="158" width="1300" height="250" rx="14" fill="#FFF7EC" stroke="#FC7900" stroke-width="2"/>
+<text x="90" y="182" font-size="13" font-weight="700" fill="#8A4B00">Azure App Service · Linux B1 · Central US — single Docker container (ACR image)</text>
+<rect x="100" y="205" width="290" height="155" rx="10" fill="#FFFFFF" stroke="#182127" stroke-width="1.5"/>
+<text x="245.0" y="240" text-anchor="middle">
+<tspan x="245.0" dy="0" font-size="14" fill="#182127" font-weight="700">React SPA (Vite)</tspan>
+<tspan x="245.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">chat · streaming</tspan>
+<tspan x="245.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">history sidebar</tspan>
+<tspan x="245.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">citations · admin</tspan>
+<tspan x="245.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">document upload</tspan>
+</text>
+<rect x="420" y="205" width="300" height="155" rx="10" fill="#FFFFFF" stroke="#182127" stroke-width="1.5"/>
+<text x="570.0" y="240" text-anchor="middle">
+<tspan x="570.0" dy="0" font-size="14" fill="#182127" font-weight="700">FastAPI · /api/v1</tspan>
+<tspan x="570.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">Pydantic models · SSE</tspan>
+<tspan x="570.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">versioned REST</tspan>
+<tspan x="570.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">two-tier auth:</tspan>
+<tspan x="570.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">X-API-Key + X-Admin-Key</tspan>
+</text>
+<rect x="750" y="205" width="280" height="155" rx="10" fill="#FDEDED" stroke="#E3434A" stroke-width="1.5"/>
+<text x="890.0" y="240" text-anchor="middle">
+<tspan x="890.0" dy="0" font-size="14" fill="#8A1F24" font-weight="700">Relevance gate</tspan>
+<tspan x="890.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">two-signal:</tspan>
+<tspan x="890.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">vector score +</tspan>
+<tspan x="890.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">lexical/domain overlap</tspan>
+<tspan x="890.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">refuse pre-LLM</tspan>
+</text>
+<rect x="1060" y="205" width="290" height="155" rx="10" fill="#FFFFFF" stroke="#182127" stroke-width="1.5"/>
+<text x="1205.0" y="240" text-anchor="middle">
+<tspan x="1205.0" dy="0" font-size="14" fill="#182127" font-weight="700">RAG orchestration</tspan>
+<tspan x="1205.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">query expansion</tspan>
+<tspan x="1205.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">context assembly</tspan>
+<tspan x="1205.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">hardened prompt</tspan>
+<tspan x="1205.0" dy="15.5" font-size="11.5" fill="#37424A" font-weight="400">citation filtering</tspan>
+</text>
+<rect x="100" y="470" width="360" height="135" rx="10" fill="#182127" stroke="#182127" stroke-width="1"/>
+<text x="280" y="502" text-anchor="middle">
+<tspan x="280" dy="0" font-size="13" fill="#FFFFFF" font-weight="700">SQLite  (meridian.db)</tspan>
+<tspan x="280" dy="15.5" font-size="11.5" fill="#C7CDD2" font-weight="400">documents · chunks</tspan>
+<tspan x="280" dy="15.5" font-size="11.5" fill="#C7CDD2" font-weight="400">conversations · messages</tspan>
+<tspan x="280" dy="15.5" font-size="11.5" fill="#C7CDD2" font-weight="400">feedback</tspan>
+</text>
+<rect x="540" y="470" width="380" height="135" rx="10" fill="#E8F0FE" stroke="#1C7293" stroke-width="1.5"/>
+<text x="730" y="502" text-anchor="middle">
+<tspan x="730" dy="0" font-size="13" fill="#0B3B4D" font-weight="700">Azure AI Search — Basic</tspan>
+<tspan x="730" dy="15.5" font-size="11.5" fill="#0B3B4D" font-weight="400">index: meridian-knowledge-base</tspan>
+<tspan x="730" dy="15.5" font-size="11.5" fill="#0B3B4D" font-weight="400">hybrid: keyword + HNSW vector</tspan>
+<tspan x="730" dy="15.5" font-size="11.5" fill="#0B3B4D" font-weight="400">semantic ranker: off by default</tspan>
+</text>
+<rect x="1000" y="470" width="350" height="135" rx="10" fill="#E8F0FE" stroke="#1C7293" stroke-width="1.5"/>
+<text x="1175" y="502" text-anchor="middle">
+<tspan x="1175" dy="0" font-size="13" fill="#0B3B4D" font-weight="700">Azure OpenAI / AI Foundry</tspan>
+<tspan x="1175" dy="15.5" font-size="11.5" fill="#0B3B4D" font-weight="400">text-embedding-3-large</tspan>
+<tspan x="1175" dy="15.5" font-size="11.5" fill="#0B3B4D" font-weight="400">GPT-5.5 — primary</tspan>
+<tspan x="1175" dy="15.5" font-size="11.5" fill="#0B3B4D" font-weight="400">DeepSeek-V3.2 — comparison</tspan>
+</text>
+<rect x="100" y="660" width="1250" height="165" rx="12" fill="#F4F5F6" stroke="#5B666E" stroke-width="1.5"/>
+<text x="120" y="684" font-size="12" font-weight="700" fill="#37424A">Offline ingestion pipeline — ingest.py  (run manually or via /documents/reindex + /documents/upload)</text>
+<rect x="130" y="700" width="250" height="105" rx="8" fill="#FFFFFF" stroke="#5B666E" stroke-width="1.2"/>
+<text x="255" y="735" text-anchor="middle">
+<tspan x="255" dy="0" font-size="12" fill="#182127" font-weight="700">Corpus — 19 docs</tspan>
+<tspan x="255" dy="15" font-size="11" fill="#37424A" font-weight="400">DOCX · PDF · Markdown</tspan>
+<tspan x="255" dy="15" font-size="11" fill="#37424A" font-weight="400">260 chunks</tspan>
+</text>
+<rect x="420" y="700" width="340" height="105" rx="8" fill="#FFFFFF" stroke="#5B666E" stroke-width="1.2"/>
+<text x="590" y="735" text-anchor="middle">
+<tspan x="590" dy="0" font-size="12" fill="#182127" font-weight="700">parse → structure-aware chunk</tspan>
+<tspan x="590" dy="15" font-size="11" fill="#37424A" font-weight="400">~400–600 tokens</tspan>
+<tspan x="590" dy="15" font-size="11" fill="#37424A" font-weight="400">15% overlap</tspan>
+</text>
+<line x1="700" y1="132" x2="600" y2="205" stroke="#37424A" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="616" y="139" width="92.0" height="15" fill="#FFFFFF" opacity="0.85"/>
+<text x="620" y="150" font-size="10" fill="#37424A">HTTPS · API key</text>
+<line x1="390" y1="282" x2="420" y2="282" stroke="#37424A" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="326" y="289" width="103.19999999999999" height="15" fill="#FFFFFF" opacity="0.85"/>
+<text x="330" y="300" font-size="10" fill="#FC7900">SSE · same origin</text>
+<line x1="720" y1="300" x2="750" y2="300" stroke="#37424A" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="718" y="324" width="36.0" height="15" fill="#FFFFFF" opacity="0.85"/>
+<text x="722" y="335" font-size="10" fill="#37424A">query</text>
+<line x1="1030" y1="300" x2="1060" y2="300" stroke="#37424A" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="1024" y="324" width="30.4" height="15" fill="#FFFFFF" opacity="0.85"/>
+<text x="1028" y="335" font-size="10" fill="#2E7D5B">pass</text>
+<line x1="480" y1="360" x2="320" y2="470" stroke="#37424A" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="246" y="419" width="204.0" height="15" fill="#FFFFFF" opacity="0.85"/>
+<text x="250" y="430" font-size="10" fill="#37424A">conversations · messages · feedback</text>
+<line x1="1150" y1="360" x2="770" y2="470" stroke="#1C7293" stroke-width="1.8" marker-end="url(#arrowb)"/>
+<rect x="816" y="419" width="215.2" height="15" fill="#FFFFFF" opacity="0.85"/>
+<text x="820" y="430" font-size="10" fill="#1C7293">hybrid retrieve · top-5 (top doc ≤ 3)</text>
+<line x1="1230" y1="360" x2="1200" y2="470" stroke="#1C7293" stroke-width="1.8" marker-end="url(#arrowb)"/>
+<rect x="1231" y="419" width="92.0" height="15" fill="#FFFFFF" opacity="0.85"/>
+<text x="1235" y="430" font-size="10" fill="#1C7293">embed + GPT-5.5</text>
+<line x1="380" y1="752" x2="420" y2="752" stroke="#37424A" stroke-width="1.8" marker-end="url(#arrow)"/>
+<line x1="760" y1="715" x2="1120" y2="607" stroke="#8A8F94" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#arrowg)"/>
+<rect x="916" y="649" width="75.19999999999999" height="15" fill="#FFFFFF" opacity="0.85"/>
+<text x="920" y="660" font-size="10" fill="#6B7176">embed chunks</text>
+<line x1="700" y1="660" x2="720" y2="607" stroke="#8A8F94" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#arrowg)"/>
+<rect x="696" y="634" width="86.39999999999999" height="15" fill="#FFFFFF" opacity="0.85"/>
+<text x="700" y="645" font-size="10" fill="#6B7176">upsert vectors</text>
+<line x1="300" y1="660" x2="290" y2="607" stroke="#8A8F94" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#arrowg)"/>
+<rect x="146" y="634" width="120.0" height="15" fill="#FFFFFF" opacity="0.85"/>
+<text x="150" y="645" font-size="10" fill="#6B7176">write chunk metadata</text>
+<text x="70" y="870" font-size="11" fill="#5B666E">Solid = online request path    Dashed = offline ingestion    Orange border = App Service boundary    Blue = Azure managed service</text>
+</svg>

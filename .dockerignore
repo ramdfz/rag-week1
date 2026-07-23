@@ -22,3 +22,13 @@ docker.log
 filelist.json
 frontend-verification.png
 citation-panel-verification.png
+# Deliverable documents & build tooling — not part of the runnable image, and
+# Office files can hold OS locks that break the ACR context upload.
+*.docx
+*.pptx
+*.drawio
+Meridian_Architecture.svg
+Meridian_Architecture.png
+Meridian_Defense_Prep.md
+build_week1_presentation.py
+~$*

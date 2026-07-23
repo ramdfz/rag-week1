@@ -153,7 +153,12 @@ def conversation_messages(conversation_id: str) -> ConversationMessagesResponse:
     return ConversationMessagesResponse(
         conversation_id=conversation_id,
         messages=[
-            ConversationMessage(role=row["role"], content=row["content"], created_at=row["created_at"])
+            ConversationMessage(
+                role=row["role"],
+                content=row["content"],
+                created_at=row["created_at"],
+                citations=json.loads(row["citations"]) if row["citations"] else [],
+            )
             for row in rows
         ],
     )
@@ -187,7 +192,11 @@ def feedback(request: FeedbackRequest) -> FeedbackResponse:
 
 def sse(event: str, data: dict | str) -> str:
     payload = data if isinstance(data, str) else json.dumps(data)
-    return f"event: {event}\ndata: {payload}\n\n"
+    # Emit one `data:` line per text line. A raw "\n\n" inside the payload would otherwise
+    # collide with the SSE event terminator and corrupt multi-paragraph responses (dropping
+    # the trailing `done` event and its citations). This is the spec-compliant framing.
+    body = "".join(f"data: {line}\n" for line in payload.split("\n"))
+    return f"event: {event}\n{body}\n"
 
 
 def stream_chat_response(app_settings: Settings, request: ChatRequest) -> Generator[str, None, None]:
@@ -216,7 +225,13 @@ def stream_chat_response(app_settings: Settings, request: ChatRequest) -> Genera
         response_text, citations = filter_citations_from_response(response_text, chunks)
     yield sse("token", response_text)
     add_message(app_settings.database_path, conversation_id, "user", request.message)
-    add_message(app_settings.database_path, conversation_id, "assistant", response_text)
+    add_message(
+        app_settings.database_path,
+        conversation_id,
+        "assistant",
+        response_text,
+        json.dumps([citation.model_dump() for citation in citations]),
+    )
     yield sse(
         "done",
         {

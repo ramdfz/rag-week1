@@ -27,6 +27,7 @@ class ConversationMessage(BaseModel):
     role: str
     content: str
     created_at: int
+    citations: list[Citation] = []
 
 
 class ConversationMessagesResponse(BaseModel):

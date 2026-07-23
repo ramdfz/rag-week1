@@ -102,11 +102,19 @@ def hybrid_retrieve(settings: Settings, query: str, top: int = 5, use_semantic: 
     if not candidates:
         return []
 
+    # Drop degenerate heading/title-only fragments (e.g. a bare document-title chunk)
+    # that match on keywords but carry no answer content and would waste a context slot.
+    substantive = [chunk for chunk in candidates if len(chunk.text.strip()) >= 80]
+    candidates = substantive or candidates
+
     top_document = candidates[0].document
     selected: list[RetrievedChunk] = []
     document_counts: dict[str, int] = {}
     for chunk in candidates:
-        document_limit = 2 if chunk.document == top_document else 1
+        # Allow the top-ranked document up to 3 chunks so single-topic questions
+        # ("what does the attendance policy require", "what is classified as restricted data")
+        # get the full picture; all other documents are capped at 1 to preserve source diversity.
+        document_limit = 3 if chunk.document == top_document else 1
         if document_counts.get(chunk.document, 0) >= document_limit:
             continue
         selected.append(chunk)
